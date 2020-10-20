@@ -1,0 +1,5 @@
+dsn
+fdb
+pyfirebirdsql
+sqlalchemy
+firebird
