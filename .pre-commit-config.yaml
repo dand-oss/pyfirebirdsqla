@@ -1,0 +1,178 @@
+# See https://pre-commit.com for more information
+default_language_version:
+  # default exe name
+  python: python
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-case-conflict
+      - id: check-yaml
+      - id: check-xml
+      - id: check-json
+      - id: check-executables-have-shebangs
+      - id: mixed-line-ending
+      - id: pretty-format-json
+        args:
+          - --autofix
+  - repo: https://github.com/asottile/reorder_python_imports
+    rev: v3.12.0
+    hooks:
+      - id: reorder-python-imports
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black
+        name: black
+        language: python
+        types: [python]
+        args:
+          - "--line-length=80"
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        args: [--py38-plus]
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.32.0
+    hooks:
+      - id: yamllint
+        language: python
+        types: [file, yaml]
+        args:
+          - -d
+          - "{extends: default, rules: {line-length: disable}}"
+  - repo: https://github.com/openstack-dev/bashate
+    rev: 2.1.1
+    hooks:
+      - id: bashate
+        # Run bashate check for all bash scripts
+        # Ignores the following rules:
+        # E006: Line longer than 79 columns (as many scripts use jinja
+        #       templating, this is very difficult)
+        # E040: Syntax error determined using `bash -n` (as many scripts
+        #       use jinja templating, this will often fail and the syntax
+        #       error will be discovered in execution anyway)
+        entry: bashate --error . --verbose --ignore=E006,E040
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        language: python
+        types: [python]
+        args:
+          - --ignore=D212,D203
+  - repo: https://github.com/pycqa/pylint
+    rev: v3.0.2
+    hooks:
+      - id: pylint
+        language: python
+        types: [python]
+        args:
+          - --rcfile=pylintrc
+          - "--jobs"  # spawning multiple processes
+          - "0"  # 0 will auto-detect the number of processors available to use
+          - --max-args
+          - "100"
+          - --max-nested-blocks
+          - "10"
+          - --max-branches
+          - "12"
+          - --max-statements
+          - "100"
+          - --max-returns
+          - "1"
+          - --max-module-lines
+          - "1000"
+          - --include-naming-hint
+          - "yes"
+          - --spelling-private-dict-file=pylint_dict.txt
+          - --enable=use-symbolic-message-instead
+          - --enable=useless-suppression
+          - --enable=fixme
+          - --disable=missing-function-docstring  # C0116
+          - --disable=line-too-long  # C0301
+          - --disable=wrong-import-order  # C0411
+          - --disable=wrong-import-position  # C0413
+          - --disable=import-outside-toplevel  # C0415
+          - --disable=import-error  # E0401
+          - --disable=no-name-in-module  # E0611
+          - --disable=no-member  # E1101
+          - --disable=too-many-function-args  # E1121
+          - --disable=consider-using-from-import  # E0012
+          - --disable=c-extension-no-member  # I1101
+          - --disable=too-many-instance-attributes  # R0902
+          - --disable=too-many-locals  # R0914
+          - --disable=fixme  # W0511
+          - --disable=global-statement  # W0603
+          - --disable=global-at-module-level  # W0604
+          - --disable=broad-except  # W0703
+          - --disable=logging-format-interpolation  # W1202
+          - --disable=logging-fstring-interpolation  # W1203
+          - --disable=too-few-public-methods  # R0903
+          - --disable=format  # handled by black
+          - --disable=deprecated-typing-alias  # R6001
+          - --disable=consider-using-alias  # R6002
+          - --disable=consider-alternative-union-syntax  # R6003
+          - --disable=consider-using-assignment-expr  # R6103 - walrus
+          - --disable=duplicate-code  # R0801
+          - --disable=protected-access # W0212
+        additional_dependencies:
+          - pyenchant  # spelling for pylint
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.6.1
+    hooks:
+      - id: mypy
+        # requires lots of packages installed
+        language: system
+          # https://towardsdatascience.com/modernize-your-sinful-python-code-with-beautiful-type-hints-4e72e98f6bf1
+          # https://towardsdatascience.com/how-to-make-python-statically-typed-the-essential-guide-e087cf4fa400
+          # https://github.com/samuelcolvin/pydantic/blob/master/setup.cfg#L51
+          # https://news.ycombinator.com/item?id=27737014
+        args:
+          - --config-file=mypy.ini  # exclusions
+          - --strict  # turns on most other options
+          - --warn-unreachable
+          #
+          #  https://linuxtut.com/en/8104ebcaa8ba8803259c/ Summary of options not enabled by `--strict`
+          # options not in strict
+          # - --disallow-any-unimported
+          # - --disallow-any-decorated
+          # - --disallow-any-explicit
+          # - --disallow-any-expr
+          # - --warn-incomplete-stub
+          #
+          # revert some options in strict
+          #
+          # - --ignore-missing-imports
+          # https://mypy.readthedocs.io/en/stable/running_mypy.html
+          # This flag makes mypy ignore all missing imports. It is equivalent to adding # type: ignore comments to all unresolved imports within your codebase.
+          # https://github.com/indigoviolet/mypy-missing-imports
+          #
+          # REQUIRED to live with --strict
+          - --allow-untyped-decorators
+          - --allow-redefinition
+          - --allow-any-generics
+          - --no-warn-return-any   # requires all types known
+          - --disable-error-code=union-attr
+          # helpful for --strict
+          - --disable-error-code=attr-defined
+          - --disable-error-code=assignment
+          - --disable-error-code=var-annotated
+          # - --disable-error-code=arg-type
+          # - --disable-error-code=return-value
+          # - --disable-error-code=valid-type
+          # - --disable-error-code=name-defined
+          # - --disable-error-code=no-untyped-def
+          # - --disable-error-code=call-overload
+          # - --disable-error-code=no-untyped-call
+          # need this with MYPYPATH=$PYTHONPATH
+          - --namespace-packages
+          - --explicit-package-bases
+          # turn on stuff we like
+          - --python-version=3.9
+          - --scripts-are-modules
+          - --show-error-codes
+        types: [python]
