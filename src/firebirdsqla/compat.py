@@ -1,3 +1,7 @@
+"""
+patches pyfirebirdsql for sqalalchemy
+
+"""
 import sys
 import firebirdsqla
 
